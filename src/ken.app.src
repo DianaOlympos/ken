@@ -1,5 +1,5 @@
 {application, ken,
- [{description, "An OTP library"},
+ [{description, " Float to string conversion in erlang for f32 and f16 using Ryu "},
   {vsn, "0.1.0"},
   {registered, []},
   {applications,
