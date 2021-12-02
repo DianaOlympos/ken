@@ -1,4 +1,4 @@
--module(ryu_f64).
+-module(ken_ryu_f64).
 
 -export([fwrite_g/1]).
 
@@ -39,7 +39,7 @@ fwrite_g(Float) ->
             insert_minus(S, DigitList)
     end.
 
--define(BIG_POW, 1 bsl 52).
+-define(BIG_POW, (1 bsl 52)).
 -define(DECODE_CORRECTION, 1075).
 
 sign_mantissa_exponent(F) ->
@@ -58,7 +58,7 @@ is_small_int(M, E) ->
         _ ->
             %% Since 2^52 <= m2 < 2^53 and 0 <= -e2 <= 52: 1 <= f = m2 / 2^-e2 < 2^53.
             %% Test if the lower -e2 bits of the significand are 0, i.e. whether the fraction is 0.
-            Mask = 1 bsl -E2 - 1,
+            Mask = (1 bsl -E2) - 1,
             Fraction = M2 band Mask,
             case Fraction of
                 0 ->
@@ -98,24 +98,24 @@ mmshift(_M, _E) ->
     1.
 
 convert_to_decimal(E2, Mv, Shift) when E2 >= 0 ->
-    Q = max(0, E2 * 78913 bsr 18 - 1),
-    Mul = ryu_table_f64:inv_value(Q),
-    K = ryu_table_f64:pow5_inv_bitcount() + pow5bits(Q) - 1,
+    Q = max(0, ((E2 * 78913) bsr 18) - 1),
+    Mul = ken_ryu_table_f64:inv_value(Q),
+    K = ken_ryu_table_f64:pow5_inv_bitcount() + pow5bits(Q) - 1,
     I = -E2 + Q + K,
     {Vm, Vr, Vp} = mulShiftAll(Mv, Shift, I, Mul),
     {Q, Vm, Vr, Vp, Q};
 convert_to_decimal(E2, Mv, Shift) when E2 < 0 ->
-    Q = max(0, -E2 * 732923 bsr 20 - 1),
+    Q = max(0, ((-E2 * 732923) bsr 20) - 1),
     I = -E2 - Q,
-    K = pow5bits(I) - ryu_table_f64:pow5_bitcount(),
-    From_file = ryu_table_f64:value(I),
+    K = pow5bits(I) - ken_ryu_table_f64:pow5_bitcount(),
+    From_file = ken_ryu_table_f64:value(I),
     J = Q - K,
     {Vm, Vr, Vp} = mulShiftAll(Mv, Shift, J, From_file),
     E10 = E2 + Q,
     {Q, Vm, Vr, Vp, E10}.
 
 pow5bits(E) ->
-    E * 1217359 bsr 19 + 1.
+    ((E * 1217359) bsr 19) + 1.
 
 mulShiftAll(Mv, Shift, J, Mul) ->
     A = mulShift64(Mv - 1 - Shift, Mul, J),
@@ -124,7 +124,7 @@ mulShiftAll(Mv, Shift, J, Mul) ->
     {A, B, C}.
 
 mulShift64(M, Mul, J) ->
-    M * Mul bsr J.
+    (M * Mul) bsr J.
 
 bounds(Mv, Q, Vp, _Accept, E2, _Shift) when E2 >= 0, Q =< 21, Mv rem 5 =:= 0 ->
     {false, multipleOfPowerOf5(Mv, Q), Vp};
@@ -137,7 +137,7 @@ bounds(_Mv, Q, Vp, true, E2, Shift) when E2 < 0, Q =< 1 ->
 bounds(_Mv, Q, Vp, false, E2, _Shift) when E2 < 0, Q =< 1 ->
     {false, true, Vp - 1};
 bounds(Mv, Q, Vp, _Accept, E2, _Shift) when E2 < 0, Q < 63 ->
-    {false, Mv band (1 bsl Q - 1) =:= 0, Vp};
+    {false, Mv band ((1 bsl Q) - 1) =:= 0, Vp};
 bounds(_Mv, _Q, Vp, _Accept, _E2, _Shift) ->
     {false, false, Vp}.
 
@@ -191,50 +191,60 @@ handle_normal_output_mod(Vr, Vm, RoundUp) when (Vm =:= Vr) or RoundUp ->
 handle_normal_output_mod(_Vr, _Vm, _RoundUp) ->
     0.
 
-handle_trailing_zeros(Vm, Vr, Vp, VmTZ, VrTZ, Removed, LastRemovedDigit)
-    when Vp div 10 =< Vm div 10 ->
+handle_trailing_zeros(Vm, Vr, Vp, VmTZ, VrTZ, Removed, LastRemovedDigit) when
+    (Vp div 10) =< (Vm div 10)
+->
     vmIsTrailingZero(Vm, Vr, Vp, VmTZ, VrTZ, Removed, LastRemovedDigit);
-handle_trailing_zeros(Vm,
-                      Vr,
-                      Vp,
-                      VmIsTrailingZero,
-                      VrIsTrailingZero,
-                      Removed,
-                      LastRemovedDigit) ->
-    VmTZ = VmIsTrailingZero and (Vm rem 10 =:= 0),
+handle_trailing_zeros(
+    Vm,
+    Vr,
+    Vp,
+    VmIsTrailingZero,
+    VrIsTrailingZero,
+    Removed,
+    LastRemovedDigit
+) ->
+    VmTZ = VmIsTrailingZero and ((Vm rem 10) =:= 0),
     VrTZ = VrIsTrailingZero and (LastRemovedDigit =:= 0),
-    handle_trailing_zeros(Vm div 10,
-                          Vr div 10,
-                          Vp div 10,
-                          VmTZ,
-                          VrTZ,
-                          1 + Removed,
-                          Vr rem 10).
+    handle_trailing_zeros(
+        Vm div 10,
+        Vr div 10,
+        Vp div 10,
+        VmTZ,
+        VrTZ,
+        1 + Removed,
+        Vr rem 10
+    ).
 
 vmIsTrailingZero(Vm, Vr, _Vp, false = _VmTZ, VrTZ, Removed, LastRemovedDigit) ->
     handle_50_dotdot_0(Vm, Vr, VrTZ, Removed, LastRemovedDigit);
-vmIsTrailingZero(Vm, Vr, _Vp, _VmTZ, VrTZ, Removed, LastRemovedDigit)
-    when Vm rem 10 /= 0 ->
+vmIsTrailingZero(Vm, Vr, _Vp, _VmTZ, VrTZ, Removed, LastRemovedDigit) when
+    (Vm rem 10) /= 0
+->
     handle_50_dotdot_0(Vm, Vr, VrTZ, Removed, LastRemovedDigit);
 vmIsTrailingZero(Vm, Vr, Vp, VmTZ, VrTZ, Removed, LastRemovedDigit) ->
-    vmIsTrailingZero(Vm div 10,
-                     Vr div 10,
-                     Vp div 10,
-                     VmTZ,
-                     LastRemovedDigit == 0 andalso VrTZ,
-                     1 + Removed,
-                     Vr rem 10).
+    vmIsTrailingZero(
+        Vm div 10,
+        Vr div 10,
+        Vp div 10,
+        VmTZ,
+        LastRemovedDigit == 0 andalso VrTZ,
+        1 + Removed,
+        Vr rem 10
+    ).
 
-handle_50_dotdot_0(Vm, Vr, true, Removed, 5) when Vr rem 2 =:= 0 ->
+handle_50_dotdot_0(Vm, Vr, true, Removed, 5) when (Vr rem 2) =:= 0 ->
     {Vm, Vr, Removed, 4};
 handle_50_dotdot_0(Vm, Vr, _VrTZ, Removed, LastRemovedDigit) ->
     {Vm, Vr, Removed, LastRemovedDigit}.
 
-handle_zero_output_mod(_Vr, _Vm, _Accept, _VmTZ, LastRemovedDigit)
-    when LastRemovedDigit >= 5 ->
+handle_zero_output_mod(_Vr, _Vm, _Accept, _VmTZ, LastRemovedDigit) when
+    LastRemovedDigit >= 5
+->
     1;
-handle_zero_output_mod(Vr, Vm, Accept, VmTZ, _LastRemovedDigit)
-    when Vr =:= Vm, not Accept or not VmTZ ->
+handle_zero_output_mod(Vr, Vm, Accept, VmTZ, _LastRemovedDigit) when
+    Vr =:= Vm, ((not Accept) or not (VmTZ))
+->
     1;
 handle_zero_output_mod(_Vr, _Vm, _Accept, _VmTZ, _LastRemovedDigit) ->
     0.
@@ -244,38 +254,43 @@ insert_decimal(Place, S, Float) ->
     Exp = Place + L - 1,
     ExpL = integer_to_list(Exp),
     ExpCost = length(ExpL) + 2,
-    if Place < 0 ->
-           if Exp >= 0 ->
-                  {S0, S1} = lists:split(L + Place, S),
-                  S0 ++ "." ++ S1;
-              2 - Place - L =< ExpCost ->
-                  "0." ++ lists:duplicate(-Place - L, $0) ++ S;
-              true ->
-                  insert_exp(ExpL, S)
-           end;
-       true ->
-           Dot = if L =:= 1 ->
+    if
+        Place < 0 ->
+            if
+                Exp >= 0 ->
+                    {S0, S1} = lists:split(L + Place, S),
+                    S0 ++ "." ++ S1;
+                2 - Place - L =< ExpCost ->
+                    "0." ++ lists:duplicate(-Place - L, $0) ++ S;
+                true ->
+                    insert_exp(ExpL, S)
+            end;
+        true ->
+            Dot =
+                if
+                    L =:= 1 ->
                         1;
                     true ->
                         0
-                 end,
-           if %% All integers in the range [-2^53, 2^53] can
-              %% be stored without loss of precision in an
-              %% IEEE 754 64-bit double but 2^53+1 cannot be
-              %% stored in an IEEE 754 64-bit double without
-              %% loss of precision (float((1 bsl 53)+1) =:=
-              %% float(1 bsl 53)). It thus makes sense to
-              %% show floats that are >= 2^53 or <= -2^53 in
-              %% scientific notation to indicate that the
-              %% number is so large that there could be loss
-              %% in precion when adding or subtracting 1.
-              %%
-              %% https://stackoverflow.com/questions/1848700/biggest-integer-that-can-be-stored-in-a-double?answertab=votes#tab-top
-              ExpCost + Dot >= Place + 2 andalso abs(Float) < float(1 bsl 53) ->
-                  S ++ lists:duplicate(Place, $0) ++ ".0";
-              true ->
-                  insert_exp(ExpL, S)
-           end
+                end,
+            %% All integers in the range [-2^53, 2^53] can
+            if
+                %% be stored without loss of precision in an
+                %% IEEE 754 64-bit double but 2^53+1 cannot be
+                %% stored in an IEEE 754 64-bit double without
+                %% loss of precision (float((1 bsl 53)+1) =:=
+                %% float(1 bsl 53)). It thus makes sense to
+                %% show floats that are >= 2^53 or <= -2^53 in
+                %% scientific notation to indicate that the
+                %% number is so large that there could be loss
+                %% in precion when adding or subtracting 1.
+                %%
+                %% https://stackoverflow.com/questions/1848700/biggest-integer-that-can-be-stored-in-a-double?answertab=votes#tab-top
+                ExpCost + Dot >= Place + 2 andalso abs(Float) < float(1 bsl 53) ->
+                    S ++ lists:duplicate(Place, $0) ++ ".0";
+                true ->
+                    insert_exp(ExpL, S)
+            end
     end.
 
 insert_exp(ExpL, [C]) ->
