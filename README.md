@@ -1,9 +1,11 @@
-ken
-=====
+# Ken
 
-Float to string conversion in erlang for f32 and f16 using Ryu
+"Binary float" to string conversion in erlang for f64, f32 and f16 using Ryu
 
-Build
------
+## Build
 
     rebar3 compile
+
+## Test
+
+    rebar3 ct
