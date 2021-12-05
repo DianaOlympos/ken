@@ -20,7 +20,7 @@ all() ->
 
 format_neg_zero(_Config) ->
     <<NegZero/float>> = <<16#8000000000000000:64>>,
-    ?assertEqual("-0.0", ken_ryu_f64:fwrite_g(NegZero)).
+    ?assertEqual("-0.0", ken_ryu_f64:fwrite_g(<<NegZero/float>>)).
 
 -define(ONE(N), 1 bsl N - 1).
 -define(ALL_ONES, ((1 bsl 52) - 1)).
@@ -479,8 +479,7 @@ ft(V, _F, 0) when is_float(V) ->
     ok.
 
 g_t(V) when is_float(V) ->
-    %% io:format("Testing ~.17g~n", [V]),
-    Io = ken_ryu_f64:fwrite_g(V),
+    Io = ken_ryu_f64:fwrite_g(<<V/float>>),
     Sv = binary_to_list(iolist_to_binary(Io)),
     ok = g_t(V, Sv),
     Sv.

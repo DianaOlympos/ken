@@ -20,7 +20,7 @@
 %%  Conference on Programming Language Design and Implementation.
 %%  https://dl.acm.org/doi/pdf/10.1145/3192366.3192369
 
--spec fwrite_g(float()) -> string().
+-spec fwrite_g(binary()) -> string().
 fwrite_g(Float) ->
     case sign_mantissa_exponent(Float) of
         {0, 0, 0} ->
@@ -42,8 +42,8 @@ fwrite_g(Float) ->
 -define(BIG_POW, (1 bsl 52)).
 -define(DECODE_CORRECTION, 1075).
 
-sign_mantissa_exponent(F) ->
-    <<S:1, BE:11, M:52>> = <<F:64/float>>,
+sign_mantissa_exponent(<<S:1, BE:11, M:52>>) ->
+    % <<S:1, BE:11, M:52>> = <<F:64/float>>,
     {S, M, BE}.
 
 is_small_int(M, E) ->
@@ -249,7 +249,8 @@ handle_zero_output_mod(Vr, Vm, Accept, VmTZ, _LastRemovedDigit) when
 handle_zero_output_mod(_Vr, _Vm, _Accept, _VmTZ, _LastRemovedDigit) ->
     0.
 
-insert_decimal(Place, S, Float) ->
+insert_decimal(Place, S, F) ->
+    <<Float/float>> = F,
     L = length(S),
     Exp = Place + L - 1,
     ExpL = integer_to_list(Exp),
