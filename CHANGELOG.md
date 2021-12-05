@@ -19,13 +19,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
-## [0.1.1] - 2014-12-05
+## [0.2.0] - 2021-12-05
+
+### Added
+
+- Typespec for `ken:binary_to_iodata`
+- output iodata instead of lists now
+
+## [0.1.1] - 2021-12-05
 
 ### Added
 
 - Added documentation to the public interface.
 
-## [0.1.0] - 2014-12-05
+## [0.1.0] - 2021-12-05
 
 ### Added
 

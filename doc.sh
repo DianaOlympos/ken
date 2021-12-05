@@ -9,7 +9,7 @@ set -e
 
 rebar3 compile
 rebar3 as docs edoc
-version=0.1.1
+version=0.2.0
 ex_doc "ken" $version "_build/default/lib/ken/ebin" \
   --source-ref v${version} \
   --config docs.config "$@"
