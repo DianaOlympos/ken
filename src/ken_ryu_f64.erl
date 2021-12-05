@@ -1,3 +1,10 @@
+%%%-------------------------------------------------------------------
+%% @doc Implements the Ryu algorithm for f64 binaries
+%%
+%% This has been extracted from OTP 24, and is mostly present here as a reference implementation.
+%% @end
+%%%-------------------------------------------------------------------
+
 -module(ken_ryu_f64).
 
 -export([fwrite_g/1]).
@@ -20,7 +27,7 @@
 %%  Conference on Programming Language Design and Implementation.
 %%  https://dl.acm.org/doi/pdf/10.1145/3192366.3192369
 
--spec fwrite_g(binary()) -> string().
+-spec fwrite_g(binary()) -> iodata().
 fwrite_g(Float) ->
     case sign_mantissa_exponent(Float) of
         {0, 0, 0} ->
@@ -75,7 +82,7 @@ compute_shortest_int(M, E) when M rem 10 =:= 0 ->
     Q = M div 10,
     compute_shortest_int(Q, E + 1);
 compute_shortest_int(M, E) ->
-    {E, integer_to_list(M)}.
+    {E, integer_to_binary(M)}.
 
 fwrite_g_1(M, E) ->
     {Mf, Ef} = decode(M, E),
@@ -85,7 +92,7 @@ fwrite_g_1(M, E) ->
     Accept = M rem 2 == 0,
     {VmIsTrailingZero, VrIsTrailingZero, Vp1} = bounds(Mv, Q, Vp, Accept, Ef, Shift),
     {D1, E1} = compute_shortest(Vm, Vr, Vp1, VmIsTrailingZero, VrIsTrailingZero, Accept),
-    {E1 + E10, integer_to_list(D1)}.
+    {E1 + E10, integer_to_binary(D1)}.
 
 decode(Mantissa, 0) ->
     {Mantissa, 1 - ?DECODE_CORRECTION - 2};
@@ -251,18 +258,19 @@ handle_zero_output_mod(_Vr, _Vm, _Accept, _VmTZ, _LastRemovedDigit) ->
 
 insert_decimal(Place, S, F) ->
     <<Float/float>> = F,
-    L = length(S),
+    L = byte_size(S),
     Exp = Place + L - 1,
-    ExpL = integer_to_list(Exp),
-    ExpCost = length(ExpL) + 2,
+    ExpL = integer_to_binary(Exp),
+    ExpCost = byte_size(ExpL) + 2,
     if
         Place < 0 ->
             if
                 Exp >= 0 ->
-                    {S0, S1} = lists:split(L + Place, S),
-                    S0 ++ "." ++ S1;
+                    S0_size = L + Place,
+                    <<S0:S0_size/binary, S1/binary>> = S,
+                    [S0, $., S1];
                 2 - Place - L =< ExpCost ->
-                    "0." ++ lists:duplicate(-Place - L, $0) ++ S;
+                    ["0.", binary:copy(<<$0>>, -Place - L), S];
                 true ->
                     insert_exp(ExpL, S)
             end;
@@ -288,18 +296,18 @@ insert_decimal(Place, S, F) ->
                 %%
                 %% https://stackoverflow.com/questions/1848700/biggest-integer-that-can-be-stored-in-a-double?answertab=votes#tab-top
                 ExpCost + Dot >= Place + 2 andalso abs(Float) < float(1 bsl 53) ->
-                    S ++ lists:duplicate(Place, $0) ++ ".0";
+                    [S, binary:copy(<<$0>>, Place), ".0"];
                 true ->
                     insert_exp(ExpL, S)
             end
     end.
 
-insert_exp(ExpL, [C]) ->
-    [C] ++ ".0e" ++ ExpL;
-insert_exp(ExpL, [C | S]) ->
-    [C] ++ "." ++ S ++ "e" ++ ExpL.
+insert_exp(ExpL, <<C:1/binary>>) ->
+    [C, ".0e", ExpL];
+insert_exp(ExpL, <<C:1/binary, S/binary>>) ->
+    [C, $., S, $e, ExpL].
 
 insert_minus(0, Digits) ->
     Digits;
 insert_minus(1, Digits) ->
-    [$-] ++ Digits.
+    [$-, Digits].

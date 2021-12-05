@@ -1,6 +1,6 @@
 {application, ken, [
     {description, " Float to string conversion in erlang for binaries f64, f32 and f16 using Ryu "},
-    {vsn, "0.1.0"},
+    {vsn, "0.1.1"},
     {registered, []},
     {applications, [
         kernel,
