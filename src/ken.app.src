@@ -1,14 +1,15 @@
-{application, ken,
- [{description, " Float to string conversion in erlang for f32 and f16 using Ryu "},
-  {vsn, "0.1.0"},
-  {registered, []},
-  {applications,
-   [kernel,
-    stdlib
-   ]},
-  {env,[]},
-  {modules, []},
+{application, ken, [
+    {description, " Float to string conversion in erlang for binaries f64, f32 and f16 using Ryu "},
+    {vsn, "0.1.0"},
+    {registered, []},
+    {applications, [
+        kernel,
+        stdlib
+    ]},
+    {env, []},
+    {modules, []},
 
-  {licenses, ["Apache 2.0"]},
-  {links, []}
- ]}.
+    {licenses, ["Apache 2.0"]},
+    {links, [{"Github", "https://github.com/DianaOlympos/ken"}]},
+    {doc, "doc"}
+]}.
