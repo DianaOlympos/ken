@@ -4,13 +4,13 @@
 
 -mode(compile).
 
--define(MOD, "ken_ryu_table_f64").
+-define(MOD, "ken_ryu_table_f32").
 
--define(TABLE_SIZE, 326).
--define(INV_TABLE_SIZE, 342).
+-define(TABLE_SIZE, 48).
+-define(INV_TABLE_SIZE, 55).
 
--define(POW5_BITCOUNT, 125).
--define(POW5_INV_BITCOUNT, 125).
+-define(POW5_BITCOUNT, 61).
+-define(POW5_INV_BITCOUNT, 59).
 
 main(_) ->
     Values = [values(X) || X <- lists:seq(0, ?TABLE_SIZE - 1)],
@@ -63,7 +63,7 @@ gen_file(Fd, Values, InvValues) ->
 
 gen_header(Fd) ->
     io:put_chars(Fd, "%%\n%% this file is generated do not modify\n"),
-    io:put_chars(Fd, "%% see ../script/generate_ryu_table_f64.escript\n\n"),
+    io:put_chars(Fd, "%% see ../script/generate_ryu_table_f32.escript\n\n"),
     io:put_chars(Fd, "-module(" ++ ?MOD ++ ").\n"),
     io:put_chars(Fd, "-export([pow5_bitcount/0, pow5_inv_bitcount/0, value/1, inv_value/1]).\n\n"),
     ok.
